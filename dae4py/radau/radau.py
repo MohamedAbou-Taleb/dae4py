@@ -28,6 +28,7 @@ def solve_dae_radau(
     controller_deadband=(1.0, 1.2),
     jac_recompute_rate=1e-3,
     jac_recompute_newton_iter=2,
+    max_step=np.infty,
 ):
     """
     Solves a system of DAEs using implicit Runge-Kutta methods with variable step-sizes.
@@ -272,6 +273,9 @@ def solve_dae_radau(
             if (tn + hn - t1) > 0:
                 hn = t1 - tn
 
+            if hn > max_step:
+                hn = max_step
+
             step_accepted = False
             while not step_accepted:
                 if not extrapolate_dense_output:
@@ -467,9 +471,6 @@ def solve_dae_radau(
                     y_eval.append(y_eval_step.T)
                     yp_eval.append(yp_eval_step.T)
 
-            # fianlly update the step-size for the next step
-            hn *= factor
-
             # update old values
             tn = tn1
             yn = yn1
@@ -482,6 +483,9 @@ def solve_dae_radau(
             pbar.n = progress
             pbar.set_description(f"t: {tn:0.2e}s < {t1:0.2e}s; h: {hn:0.2e}")
             pbar.refresh()
+
+            # fianlly update the step-size for the next step
+            hn *= factor
 
     return _RichResult(
         t=np.array(t),
